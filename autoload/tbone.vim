@@ -335,6 +335,30 @@ function! tbone#write_command(bang, line1, line2, count, target) abort
   endtry
 endfunction
 
+
+function! tbone#exec_command(bang, line1, line2, count, target) abort
+  let target = empty(a:target) ? get(g:, 'tbone_write_pane', '') : a:target
+  if empty(target)
+    return 'echoerr '.string('Target pane required')
+  endif
+
+  let keys = join(filter(map(
+        \ getline(a:line1, a:line2),
+        \ 'substitute(v:val,"^\\s*","","")'),
+        \ "!empty(v:val)"),
+        \ "\r")
+  let keys = get(g:, 'tbone_write_initialization', '').keys."\r"
+
+  try
+    let pane_id = tbone#send_keys(target, keys)
+    let g:tbone_write_pane = pane_id
+    echo len(keys).' keys sent to '.pane_id
+    return ''
+  catch /.*/
+    return 'echoerr '.string(v:exception)
+  endtry
+endfunction
+
 function! tbone#send_keys(target, keys) abort
   if empty(a:target)
     throw 'Target pane required'
